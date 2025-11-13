@@ -137,7 +137,9 @@ public class ZEDPlaneGameObject : MonoBehaviour
     /// Enabled state of the attached Renderer prior to Unity's rendering stage. 
     /// <para>Used so that manually disabling the object's MeshRenderer won't be undone by this script.</para>
     /// </summary>
+#if !ZED_HDRP && !ZED_URP
     private bool lastRenderState = true;
+#endif
 
     /// <summary>
     /// Creates a mesh from given plane data and assigns it to new MeshFilter, MeshRenderer and MeshCollider components. 
@@ -200,8 +202,9 @@ public class ZEDPlaneGameObject : MonoBehaviour
         // Set the mesh for the collider.
         mc.sharedMesh = mfilter.mesh;
 
+#if !ZED_HDRP && !ZED_URP
         lastRenderState = true;
-
+#endif
     }
 
     /// <summary>
@@ -265,7 +268,11 @@ public class ZEDPlaneGameObject : MonoBehaviour
         Camera.onPreCull += PreCull;
         Camera.onPostRender += PostRender;
 #else
+#if UNITY_6000_2_OR_NEWER
+        RenderPipelineManager.beginContextRendering += SRPFrameBegin;
+#else
         RenderPipelineManager.beginFrameRendering += SRPFrameBegin;
+#endif
 #endif
     }
 
@@ -443,7 +450,7 @@ public class ZEDPlaneGameObject : MonoBehaviour
         return defaultmaterial;
     }
 
-#if! ZED_URP && !ZED_HDRP
+#if !ZED_URP && !ZED_HDRP
     /// <summary>
     /// Disables the MeshRenderer object for rendering a single camera, depending on display settings in ZEDPlaneDetectionManager. 
     /// </summary>
@@ -474,6 +481,22 @@ public class ZEDPlaneGameObject : MonoBehaviour
         rend.enabled = lastRenderState;
     }
 #else
+#if UNITY_6000_2_OR_NEWER
+    private void SRPFrameBegin(ScriptableRenderContext context, List<Camera> rendercams)
+    {
+        rend.enabled = false; //We'll only draw for certain cameras. 
+        foreach (Camera rendcam in rendercams)
+        {
+            if (rendcam.name.ToLower().Contains("scenecamera"))
+            {
+                if (ZEDPlaneDetectionManager.isSceneDisplay) DrawPlane(rendcam);
+            }
+            else if (ZEDPlaneDetectionManager.isGameDisplay) DrawPlane(rendcam);
+        }
+    }
+
+    [System.Obsolete]
+#endif
     private void SRPFrameBegin(ScriptableRenderContext context, Camera[] rendercams)
     {
         rend.enabled = false; //We'll only draw for certain cameras. 
@@ -501,7 +524,11 @@ public class ZEDPlaneGameObject : MonoBehaviour
         Camera.onPreCull -= PreCull;
         Camera.onPostRender -= PostRender;
 #else
+#if UNITY_6000_2_OR_NEWER
+        RenderPipelineManager.beginContextRendering -= SRPFrameBegin;
+#else
         RenderPipelineManager.beginFrameRendering -= SRPFrameBegin;
+#endif
 #endif
     }
 }

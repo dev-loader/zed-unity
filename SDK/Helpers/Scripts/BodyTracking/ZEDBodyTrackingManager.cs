@@ -162,7 +162,11 @@ public class ZEDBodyTrackingManager : MonoBehaviour
         avatarControlList = new Dictionary<int,SkeletonHandler> ();
         if (!zedManager)
         {
+#if UNITY_6000_2_OR_NEWER
+            zedManager = FindFirstObjectByType<ZEDManager>();
+#else
             zedManager = FindObjectOfType<ZEDManager>();
+#endif
         }
 
         if(avatar.GetComponent<Animator>().runtimeAnimatorController == null)

@@ -344,12 +344,16 @@ public class ZEDMixedRealityPlugin : MonoBehaviour
 		zedReady = false;
 
 #if ZED_HDRP || ZED_URP
+#if UNITY_6000_2_OR_NEWER
+        RenderPipelineManager.beginContextRendering += SRPStartFrame;
+#else
         RenderPipelineManager.beginFrameRendering += SRPStartFrame;
+#endif
 #else
 		Camera.onPreRender += PreRender;
 #endif
 
-		LoadHmdToZEDCalibration(); 
+        LoadHmdToZEDCalibration(); 
 	}
 
 	/// <summary>
@@ -664,9 +668,40 @@ public class ZEDMixedRealityPlugin : MonoBehaviour
 	}
 
 #if ZED_HDRP || ZED_URP
+#if UNITY_6000_2_OR_NEWER
+    private void SRPStartFrame(ScriptableRenderContext context, List<Camera> cams)
+    {
+        foreach (Camera cam in cams)
+        {
+            if (cam == finalCenterEye)
+            {
+
+                if ((!manager.IsZEDReady && manager.IsStereoRig))
+                {
+                    System.Collections.Generic.List<XRNodeState> nodeStates = new System.Collections.Generic.List<XRNodeState>();
+                    InputTracking.GetNodeStates(nodeStates);
+                    XRNodeState nodeState = nodeStates.Find(node => node.nodeType == XRNode.Head);
+                    nodeState.TryGetRotation(out Quaternion rot);
+                    nodeState.TryGetPosition(out Vector3 pos);
+
+#if NEW_TRANSFORM_API
+                    quadCenter.SetLocalPositionAndRotation(pos + quadCenter.localRotation * offset, rot);
+#else
+                    quadCenter.localRotation = rot;
+                    quadCenter.localPosition = pos + quadCenter.localRotation * offset;
+#endif
+
+                }
+            }
+        }
+    }
+
+    [System.Obsolete]
+#endif
     private void SRPStartFrame(ScriptableRenderContext context, Camera[] cams)
     {
-        foreach(Camera cam in cams) {
+        foreach (Camera cam in cams)
+        {
             if (cam == finalCenterEye)
             {
 
@@ -718,12 +753,12 @@ public class ZEDMixedRealityPlugin : MonoBehaviour
 	}
 #endif
 
-	/// <summary>
-	/// Loads the HMD to ZED calibration file and applies it to the hmdtozedCalibration offset.
-	/// Note that the file it loads is created using hard-coded values
-	/// and the ZED plugin doesn't ever change it. See CreateDefaultCalibrationFile().
-	/// </summary>
-	public void LoadHmdToZEDCalibration()
+    /// <summary>
+    /// Loads the HMD to ZED calibration file and applies it to the hmdtozedCalibration offset.
+    /// Note that the file it loads is created using hard-coded values
+    /// and the ZED plugin doesn't ever change it. See CreateDefaultCalibrationFile().
+    /// </summary>
+    public void LoadHmdToZEDCalibration()
 	{
 		if (hasVRDevice) {
 			/// Default calibration (may be changed)

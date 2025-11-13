@@ -471,7 +471,7 @@ public class ZEDRenderingPlane : MonoBehaviour
 
 
         //Force Unity into 16:9 mode to match the ZED's output.
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_6000_2_OR_NEWER
         UnityEditor.PlayerSettings.SetAspectRatio(UnityEditor.AspectRatio.Aspect16by9, true);
         UnityEditor.PlayerSettings.SetAspectRatio(UnityEditor.AspectRatio.Aspect16by10, false);
         UnityEditor.PlayerSettings.SetAspectRatio(UnityEditor.AspectRatio.Aspect4by3, false);
@@ -490,7 +490,11 @@ public class ZEDRenderingPlane : MonoBehaviour
         //aspectRatio = new WindowAspectRatio(cam);
 
 #if ZED_LWRP || ZED_HDRP || ZED_URP
+#if UNITY_6000_2_OR_NEWER
+        RenderPipelineManager.beginContextRendering += SRPStartFrame;
+#else
         RenderPipelineManager.beginFrameRendering += SRPStartFrame;
+#endif
 #endif
     }
 
@@ -669,7 +673,9 @@ public class ZEDRenderingPlane : MonoBehaviour
     /// </summary>
     private void SetForward()
     {
+#if !ZED_HDRP && !ZED_URP
         ghasShadows = false;
+#endif
 
         blitMaterial = new Material(Resources.Load("Materials/PostProcessing/Mat_ZED_Blit") as Material);
 
@@ -704,7 +710,7 @@ public class ZEDRenderingPlane : MonoBehaviour
         forwardMat.SetTexture("_MainTex", textureEye);
         forwardMat.SetTexture("_DepthXYZTex", depth);
 
-#if !ZED_HDRP  && !ZED_URP
+#if !ZED_HDRP && !ZED_URP
         //Clear the buffers.
         if (buffer[(int)ZED_RENDERING_MODE.FORWARD] != null)
             cam.RemoveCommandBuffer(CameraEvent.BeforeDepthTexture, buffer[(int)ZED_RENDERING_MODE.FORWARD]);
@@ -783,7 +789,10 @@ public class ZEDRenderingPlane : MonoBehaviour
         cam.allowMSAA = false;
 #endif
 
+#if !ZED_HDRP && !ZED_URP
         ghasShadows = false;
+#endif
+
         deferredMat = new Material(Resources.Load("Materials/Lighting/Mat_ZED_Deferred") as Material);
         blitMaterial = new Material(Resources.Load("Materials/PostProcessing/Mat_ZED_Blit") as Material);
 
@@ -1075,7 +1084,10 @@ public class ZEDRenderingPlane : MonoBehaviour
     /// </summary>
     [HideInInspector]
     public int numberSpotLights;
+
+#if !ZED_HDRP && !ZED_URP
     bool ghasShadows = false;
+#endif
 
     /// <summary>
     /// Updates lighting information, packages them into ComputeBuffers and sends them to the shader.
@@ -1272,7 +1284,11 @@ public class ZEDRenderingPlane : MonoBehaviour
         }
 
 #if ZED_HDRP || ZED_URP
+#if UNITY_6000_2_OR_NEWER
+        RenderPipelineManager.beginContextRendering -= SRPStartFrame;
+#else
         RenderPipelineManager.beginFrameRendering -= SRPStartFrame;
+#endif
 #endif
     }
 
@@ -1333,12 +1349,10 @@ public class ZEDRenderingPlane : MonoBehaviour
     }
 
 #if ZED_HDRP || ZED_URP
-    /// <summary>
-    /// Blend the wireframe into the image. Used in SRP because there is no OnRenderImage automatic function.
-    /// </summary>
-    private void SRPStartFrame(ScriptableRenderContext context, Camera[] rendcam)
+#if UNITY_6000_2_OR_NEWER
+    private void SRPStartFrame(ScriptableRenderContext context, System.Collections.Generic.List<Camera> rendcam)
     {
-        foreach(Camera camera in rendcam)
+        foreach (Camera camera in rendcam)
         {
             if (camera == renderingCam && zedManager.GetSpatialMapping.display)
             {
@@ -1347,6 +1361,24 @@ public class ZEDRenderingPlane : MonoBehaviour
         }
 
     }
+
+    /// <summary>
+    /// Blend the wireframe into the image. Used in SRP because there is no OnRenderImage automatic function.
+    /// </summary>
+    [System.Obsolete]
+#endif
+    private void SRPStartFrame(ScriptableRenderContext context, Camera[] rendcam)
+    {
+        foreach (Camera camera in rendcam)
+        {
+            if (camera == renderingCam && zedManager.GetSpatialMapping.display)
+            {
+                DrawSpatialMappingMeshes(camera);
+            }
+        }
+
+    }
+
     /// <summary>
     /// Draw every chunk of the wiremesh
     /// </summary>

@@ -101,7 +101,12 @@ public class ZEDControllerTracker : MonoBehaviour
         
         if (!zedManager)
         {
+#if UNITY_6000_2_OR_NEWER
+            zedManager = FindFirstObjectByType<ZEDManager>();
+#else
             zedManager = FindObjectOfType<ZEDManager>();
+#endif
+
             //If there are multiple cameras in a scene, this arbitrary assignment could be bad. Warn the user.
             if (ZEDManager.GetInstances().Count > 1)
             {

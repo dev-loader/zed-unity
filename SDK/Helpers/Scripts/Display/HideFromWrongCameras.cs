@@ -47,7 +47,9 @@ public class HideFromWrongCameras : MonoBehaviour
     /// Enabled state of the attached Renderer prior to Unity's rendering stage. 
     /// <para>Used so that manually disabling the object's MeshRenderer won't be undone by this script.</para>
     /// </summary>
+#if !ZED_HDRP && !ZED_URP
     private bool lastRenderState = true;
+#endif
 
     public void Awake()
     {
@@ -59,7 +61,12 @@ public class HideFromWrongCameras : MonoBehaviour
         Camera.onPostRender += PostRender;
 #else
         mfilter = GetComponent<MeshFilter>();
+
+#if UNITY_6000_2_OR_NEWER
+        RenderPipelineManager.beginContextRendering += SRPStartFrame;
+#else
         RenderPipelineManager.beginFrameRendering += SRPStartFrame;
+#endif
 #endif
 
     }
@@ -86,11 +93,31 @@ public class HideFromWrongCameras : MonoBehaviour
     }
 
 #if ZED_HDRP || ZED_URP
+#if UNITY_6000_2_OR_NEWER
+    private void SRPStartFrame(ScriptableRenderContext context, System.Collections.Generic.List<Camera> cams)
+    {
+        rend.enabled = false;
+
+        foreach (Camera rendcam in cams)
+        {
+            if (rendcam == renderableCamera || //Draw if it's the camera that this frame is designated for.
+                rendcam.name.Contains("scenecamera", System.StringComparison.OrdinalIgnoreCase) || //Draw if it's the camera from the Unity Editor Scene window. 
+                (rendcam.name.Contains("preview", System.StringComparison.OrdinalIgnoreCase) && rendcam.transform.position == renderableCamera.transform.position && rendcam.transform.rotation == renderableCamera.transform.rotation) || //Editor preview.
+                (showInNonZEDCameras == true && !zedCamList.Contains(rendcam) && !rendcam.name.Contains("preview", System.StringComparison.OrdinalIgnoreCase))) //All other cameras, other than other ZED cameras and preview cameras, if the user wants. 
+            {
+                DrawCanvas(rendcam);
+            }
+
+        }
+    }
+
+    [System.Obsolete]
+#endif
     private void SRPStartFrame(ScriptableRenderContext context, Camera[] cams)
     {
         rend.enabled = false;
 
-        foreach(Camera rendcam in cams)
+        foreach (Camera rendcam in cams)
         {
             if (rendcam == renderableCamera || //Draw if it's the camera that this frame is designated for.
                 rendcam.name.Contains("scenecamera", System.StringComparison.OrdinalIgnoreCase) || //Draw if it's the camera from the Unity Editor Scene window. 
@@ -177,7 +204,11 @@ public class HideFromWrongCameras : MonoBehaviour
         Camera.onPreRender -= PreRender;
         Camera.onPostRender -= PostRender;
 #else
+#if UNITY_6000_2_OR_NEWER
+        RenderPipelineManager.beginContextRendering -= SRPStartFrame;
+#else
         RenderPipelineManager.beginFrameRendering -= SRPStartFrame;
+#endif
 #endif
 
     }

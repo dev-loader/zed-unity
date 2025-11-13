@@ -33,7 +33,11 @@ public class ZEDMirror : MonoBehaviour
         XRSettings.showDeviceView = false; //Turn off default behavior.
 
 #if ZED_HDRP || ZED_URP
+#if UNITY_6000_2_OR_NEWER
+        RenderPipelineManager.endContextRendering += OnFrameEnd;
+#else
         RenderPipelineManager.endFrameRendering += OnFrameEnd;
+#endif
 #endif
 
     }
@@ -57,22 +61,38 @@ public class ZEDMirror : MonoBehaviour
     }
 
 #else
-/// <summary>
-/// Blits the intermediary targetTexture to the final outputTexture for rendering. Used in SRP because there is no OnRenderImage automatic function. 
-/// </summary>
-private void OnFrameEnd(ScriptableRenderContext context, Camera[] cams)
-{
-    if (textureOverlayLeft != null)
+#if UNITY_6000_2_OR_NEWER
+    private void OnFrameEnd(ScriptableRenderContext context, System.Collections.Generic.List<Camera> cams)
     {
-        Graphics.Blit(textureOverlayLeft.target, (RenderTexture)null);
+        if (textureOverlayLeft != null)
+        {
+            Graphics.Blit(textureOverlayLeft.target, (RenderTexture)null);
+        }
     }
-}
+
+    /// <summary>
+    /// Blits the intermediary targetTexture to the final outputTexture for rendering. Used in SRP because there is no OnRenderImage automatic function. 
+    /// </summary>
+    [System.Obsolete]
+#endif
+
+    private void OnFrameEnd(ScriptableRenderContext context, Camera[] cams)
+    {
+        if (textureOverlayLeft != null)
+        {
+            Graphics.Blit(textureOverlayLeft.target, (RenderTexture)null);
+        }
+    }
 #endif
 
     private void OnDestroy()
     {
 #if ZED_URP || ZED_HDRP
+#if UNITY_6000_2_OR_NEWER
+        RenderPipelineManager.endContextRendering -= OnFrameEnd;
+#else
         RenderPipelineManager.endFrameRendering -= OnFrameEnd;
+#endif
 #endif
     }
 }

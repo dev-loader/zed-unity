@@ -32,7 +32,12 @@ public class HeightOffsetter : MonoBehaviour
 
     private void Awake()
     {
+#if UNITY_6000_2_OR_NEWER
+        bodyTrackingManager = FindFirstObjectByType<ZEDBodyTrackingManager>();
+#else
         bodyTrackingManager = FindObjectOfType<ZEDBodyTrackingManager>();
+#endif
+
         if (bodyTrackingManager == null)
         {
             Debug.LogError("ZEDManagerIK: No body tracking manager loaded!");
