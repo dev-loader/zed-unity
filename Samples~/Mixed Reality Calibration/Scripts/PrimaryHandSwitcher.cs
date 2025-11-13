@@ -31,7 +31,7 @@ public class PrimaryHandSwitcher : MonoBehaviour
         {
             if (!_primaryhandobject)
             {
-                ZEDXRGrabber primarygrabber = FindAnyObjectByType<ZEDXRGrabber>();
+                ZEDXRGrabber primarygrabber = FindObjectOfType<ZEDXRGrabber>();
                 _primaryhandobject = primarygrabber.transform.parent.gameObject;
             }
             return _primaryhandobject;

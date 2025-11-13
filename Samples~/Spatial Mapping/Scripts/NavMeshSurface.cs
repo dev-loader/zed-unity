@@ -113,7 +113,7 @@ public class NavMeshSurface: MonoBehaviour
     {
         if(!zedManagerSpatialMapping)
         {
-            zedManagerSpatialMapping = FindAnyObjectByType<ZEDManager>();
+            zedManagerSpatialMapping = FindObjectOfType<ZEDManager>();
         }
 
 #if UNITY_5_6_OR_NEWER

@@ -80,7 +80,7 @@ public class BunnyPlacement : MonoBehaviour
     {
         canspawnbunny = false;
         tracker = GetComponent<ZEDControllerTracker_DemoInputs>();
-        zedPlane = FindAnyObjectByType<ZEDPlaneDetectionManager>();
+        zedPlane = FindObjectOfType<ZEDPlaneDetectionManager>();
         bunnySpawner = GetComponent<BunnySpawner>();
     }
 
@@ -101,7 +101,6 @@ public class BunnyPlacement : MonoBehaviour
     /// </summary>
     private void Update()
     {
-#if ENABLE_LEGACY_INPUT_MANAGER
         if (tracker == null)
         {
             if (Input.GetKeyDown(KeyCode.Space))
@@ -112,7 +111,6 @@ public class BunnyPlacement : MonoBehaviour
                 button = state.Up;
             else
                 button = state.Idle;
-
         }
         else
         {
@@ -124,9 +122,6 @@ public class BunnyPlacement : MonoBehaviour
                 button = state.Up;
             else button = state.Idle;
         }
-#else
-        Debug.LogWarning("Legacy Input Manager is not enabled. Bunny Placement script will not receive input.");
-#endif
         //If the Trigger Button is being used.
         if (button != state.Idle)
         {

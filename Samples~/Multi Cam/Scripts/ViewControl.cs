@@ -22,8 +22,9 @@ public class ViewControl : MonoBehaviour {
     private void Start()
     {
         cam = GetComponent<Camera>();
-		camControllers = FindObjectsByType<ViewControl>(FindObjectsSortMode.None);
+		camControllers = FindObjectsOfType<ViewControl>();
     }
+
 
 	private void Update()
     {

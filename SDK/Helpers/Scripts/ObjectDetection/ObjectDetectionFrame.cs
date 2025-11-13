@@ -93,11 +93,8 @@ public class ObjectDetectionFrame
 
         for (int i = 0; i < oframe.nbObjects; i++)
         {
-            if (i < oframe.objectList.Length)
-            {
-                DetectedObject dobj = new DetectedObject(oframe.objectList[i], detectingmanager, campos, camrot);
-                detObjects.Add(dobj);
-            }
+            DetectedObject dobj = new DetectedObject(oframe.objectList[i], detectingmanager, campos, camrot);
+            detObjects.Add(dobj);
         }
     }
 

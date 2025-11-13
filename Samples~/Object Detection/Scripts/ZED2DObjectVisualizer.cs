@@ -141,7 +141,7 @@ public class ZED2DObjectVisualizer : MonoBehaviour
     {
         if (!zedManager)
         {
-            zedManager = FindAnyObjectByType<ZEDManager>();
+            zedManager = FindObjectOfType<ZEDManager>();
         }
 
         if (detectionMode == DetectionMode.ObjectDetection)

@@ -105,7 +105,7 @@ public class DroneSpawner : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-		zedManager = FindAnyObjectByType<ZEDManager> ();
+		zedManager = FindObjectOfType<ZEDManager> ();
 		//Set the countdown Timer;
 		respawncountdown = respawnTimer;
 		//Get the ZED camera

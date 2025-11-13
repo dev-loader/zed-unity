@@ -205,23 +205,20 @@ namespace sl
         /// <summary>
         /// [Cam model, eeprom version, white balance param]
         /// </summary>
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 3)]
         public byte[] identifiers;
         /// <summary>
         ///  badge name (zedx_ar0234)
         /// </summary>
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-        public string camera_badge;
+        public IntPtr camera_badge;
         /// <summary>
         /// Name of sensor (zedx)
         /// </summary>
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-        public string camera_sensor_model;
+        public IntPtr camera_sensor_model;
         /// <summary>
         /// Name of Camera in DT (ZED_CAM1)
         /// </summary>
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-        public string camera_name;
+        public IntPtr camera_name;
         /// <summary>
         /// Input type of the camera.
         /// </summary>
@@ -788,57 +785,30 @@ namespace sl
         /// Key used to retrieve the data stored into SVOData's content.
         /// The key size must not exceed 128 characters.
         /// </summary>
-        IntPtr key;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+        public string key;
         /// <summary>
-        /// Size of the key string
+        /// Timestamp of the data (in nanoseconds).
         /// </summary>
-        int keySize;
+        public ulong timestamp;
         /// <summary>
         /// Content stored as SVOData
-        /// Allow any type of content, including raw data like compressed images of json.
+        /// Allow any type of content, including raw data like compressed images or JSON.
         /// </summary>
         IntPtr content;
         /// <summary>
         /// Size of the content data.
         /// </summary>
-        int contentSize;
-        /// <summary>
-        /// Timestamp of the data (in nanoseconds).
-        /// </summary>
-        public ulong timestamp;
+        public int contentSize;
 
         public string GetContent()
         {
-            string result = Marshal.PtrToStringAnsi(content);
-            ZEDCamera.dllz_free(content);
-            content = IntPtr.Zero;
-            return result;
+            return Marshal.PtrToStringAnsi(content);
         }
 
         public void SetContent(string c)
         {
             content = Marshal.StringToHGlobalAnsi(c);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public string GetKey()
-        {
-            string result = Marshal.PtrToStringAnsi(key);
-            ZEDCamera.dllz_free(key);
-            key = IntPtr.Zero;
-            return result;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="k"></param>
-        public void SetKey(string k)
-        {
-            key = Marshal.StringToHGlobalAnsi(k);
         }
     }
 
@@ -937,10 +907,6 @@ namespace sl
     /// </remarks>
     public enum ERROR_CODE
     {
-        /// <summary>
-        /// The camera has a potential calibration issue.
-        /// </summary>
-        POTENTIAL_CALIBRATION_ISSUE = -5,
         /// <summary>
         /// The operation could not proceed with the target configuration but did success with a fallback.
         /// </summary>
@@ -1095,11 +1061,6 @@ namespace sl
         /// The module needs a newer version of CUDA.
         /// </summary>
         MODULE_NOT_COMPATIBLE_WITH_CUDA_VERSION,
-        /// <summary>
-        /// The drivers initialization has failed. When using gmsl cameras, try restarting with sudo systemctl
-        /// restart zed_x_daemon.service
-        /// </summary>
-        DRIVER_FAILURE,
         /// @cond SHOWHIDDEN 
         LAST
         /// @endcond
@@ -1219,215 +1180,71 @@ namespace sl
     public enum VIEW
     {
         /// <summary>
-        /// Left BGRA image. Each pixel contains 4 unsigned char (B, G, R, A).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C4.
+        /// Left RGBA image. As a ZEDMat, MAT_TYPE is set to MAT_TYPE_8U_C4.
         /// </summary>
         LEFT,
         /// <summary>
-        ///  Right BGRA image. Each pixel contains 4 unsigned char (B, G, R, A).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C4.
+        /// Right RGBA image. As a ZEDMat, MAT_TYPE is set to sl::MAT_TYPE_8U_C4.
         /// </summary>
         RIGHT,
         /// <summary>
-        /// Left gray image. Each pixel contains 1 unsigned char.
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C1.
+        /// Left GRAY image. As a ZEDMat, MAT_TYPE is set to sl::MAT_TYPE_8U_C1.
         /// </summary>
         LEFT_GREY,
         /// <summary>
-        /// Right gray image. Each pixel contains 1 unsigned char.
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C1.
+        /// Right GRAY image. As a ZEDMat, MAT_TYPE is set to sl::MAT_TYPE_8U_C1.
         /// </summary>
         RIGHT_GREY,
         /// <summary>
-        /// Left BGRA unrectified image. Each pixel contains 4 unsigned char (B, G, R, A).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C4.
+        /// Left RGBA unrectified image. As a ZEDMat, MAT_TYPE is set to sl::MAT_TYPE_8U_C4.
         /// </summary>
         LEFT_UNRECTIFIED,
         /// <summary>
-        /// Right BGRA unrectified image. Each pixel contains 4 unsigned char (B, G, R, A).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C4.
+        /// Right RGBA unrectified image. As a ZEDMat, MAT_TYPE is set to sl::MAT_TYPE_8U_C4.
         /// </summary>
         RIGHT_UNRECTIFIED,
         /// <summary>
-        /// Left gray unrectified image. Each pixel contains 1 unsigned char.
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C1.
+        /// Left GRAY unrectified image. As a ZEDMat, MAT_TYPE is set to sl::MAT_TYPE_8U_C1.
         /// </summary>
         LEFT_UNRECTIFIED_GREY,
         /// <summary>
-        /// Right gray unrectified image. Each pixel contains 1 unsigned char.
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C1.
+        /// Right GRAY unrectified image. As a ZEDMat, MAT_TYPE is set to sl::MAT_TYPE_8U_C1.
         /// </summary>
         RIGHT_UNRECTIFIED_GREY,
         /// <summary>
-        /// Left and right image (the image width is therefore doubled). Each pixel contains 4 unsigned char (B, G, R, A).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C4.
+        ///  Left and right image. Will be double the width to hold both. As a ZEDMat, MAT_TYPE is set to MAT_8U_C4.
         /// </summary>
         SIDE_BY_SIDE,
         /// <summary>
-        /// Color rendering of the depth. Each pixel contains 4 unsigned char (B, G, R, A).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C4.
-        /// \note Use \ref MEASURE "sl.MEASURE.DEPTH" with sl.Camera.RetrieveMeasure() to get depth values.
+        /// Normalized depth image. As a ZEDMat, MAT_TYPE is set to sl::MAT_TYPE_8U_C4.
+        /// <para>Use an Image texture for viewing only. For measurements, use a Measure type instead
+        /// (ZEDCamera.RetrieveMeasure()) to preserve accuracy. </para>
         /// </summary>
         DEPTH,
         /// <summary>
-        /// Color rendering of the depth confidence. Each pixel contains 4 unsigned char (B, G, R, A).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C4.
-        /// \note Use \ref MEASURE "sl.MEASURE.CONFIDENCE" with sl.Camera.RetrieveMeasure() to get confidence values.
+        /// Normalized confidence image. As a ZEDMat, MAT_TYPE is set to MAT_8U_C4.
+        /// <para>Use an Image texture for viewing only. For measurements, use a Measure type instead
+        /// (ZEDCamera.RetrieveMeasure()) to preserve accuracy. </para>
         /// </summary>
         CONFIDENCE,
         /// <summary>
-        /// Color rendering of the normals. Each pixel contains 4 unsigned char (B, G, R, A).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C4.
-        /// \note Use \ref MEASURE "sl.MEASURE.NORMALS" with sl.Camera.RetrieveMeasure() to get normal values.
+        /// Color rendering of the normals. As a ZEDMat, MAT_TYPE is set to MAT_8U_C4.
+        /// <para>Use an Image texture for viewing only. For measurements, use a Measure type instead
+        /// (ZEDCamera.RetrieveMeasure()) to preserve accuracy. </para>
         /// </summary>
         NORMALS,
         /// <summary>
-        /// Color rendering of the right depth mapped on right sensor. Each pixel contains 4 unsigned char (B, G, R, A).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C4.
-        /// \note Use \ref MEASURE "sl.MEASURE.DEPTH_RIGHT" with sl.Camera.RetrieveMeasure() to get depth right values.
+        /// Color rendering of the right depth mapped on right sensor. As a ZEDMat, MAT_TYPE is set to MAT_8U_C4.
+        /// <para>Use an Image texture for viewing only. For measurements, use a Measure type instead
+        /// (ZEDCamera.RetrieveMeasure()) to preserve accuracy. </para>
         /// </summary>
         DEPTH_RIGHT,
         /// <summary>
-        /// Color rendering of the normals mapped on right sensor. Each pixel contains 4 unsigned char (B, G, R, A).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C4.
-        /// \note Use \ref MEASURE "sl.MEASURE.NORMALS_RIGHT" with sl.Camera.RetrieveMeasure() to get normal right values.
+        /// Color rendering of the normals mapped on right sensor. As a ZEDMat, MAT_TYPE is set to MAT_8U_C4.
+        /// <para>Use an Image texture for viewing only. For measurements, use a Measure type instead
+        /// (ZEDCamera.RetrieveMeasure()) to preserve accuracy. </para>
         /// </summary>
-        NORMALS_RIGHT,
-        /// <summary>
-        /// Alias of LEFT
-        /// </summary>
-        LEFT_BGRA,
-        /// <summary>
-        /// Left image. Each pixel contains 3 unsigned char (B, G, R).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C3.
-        /// </summary>
-        LEFT_BGR,
-        /// <summary>
-        /// Alias of RIGHT
-        /// </summary>
-        RIGHT_BGRA,
-        /// <summary>
-        /// Right image. Each pixel contains 3 unsigned char (B, G, R).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C3.
-        /// </summary>
-        RIGHT_BGR,
-        /// <summary>
-        /// Alias of LEFT_UNRECTIFIED
-        /// </summary>
-        LEFT_UNRECTIFIED_BGRA,
-        /// <summary>
-        /// Left unrectified image. Each pixel contains 3 unsigned char (B, G, R).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C3.
-        /// </summary>
-        LEFT_UNRECTIFIED_BGR,
-        /// <summary>
-        /// Alias of RIGHT_UNRECTIFIED
-        /// </summary>
-        RIGHT_UNRECTIFIED_BGRA,
-        /// <summary>
-        /// Right unrectified image. Each pixel contains 3 unsigned char (B, G, R).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C3.
-        /// </summary>
-        RIGHT_UNRECTIFIED_BGR,
-        /// <summary>
-        /// Alias of SIDE_BY_SIDE
-        /// </summary>
-        SIDE_BY_SIDE_BGRA,
-        /// <summary>
-        /// Side by side image. Each pixel contains 3 unsigned char (B, G, R).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C3.
-        /// </summary>
-        SIDE_BY_SIDE_BGR,
-        /// <summary>
-        /// gray scale side by side image. Each pixel contains 1 unsigned char.
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C1.
-        /// </summary>
-        SIDE_BY_SIDE_GRAY,
-        /// <summary>
-        /// Unrectified side by side image. Each pixel contains 4 unsigned char (B, G, R, A).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C4.
-        /// </summary>
-        SIDE_BY_SIDE_UNRECTIFIED_BGRA,
-        /// <summary>
-        /// Unrectified side by side image. Each pixel contains 3 unsigned char (B, G, R).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C3.
-        /// </summary>
-        SIDE_BY_SIDE_UNRECTIFIED_BGR,
-        /// <summary>
-        /// Grayscale unrectified side by side image. Each pixel contains 1 unsigned char.
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C1.
-        /// </summary>
-        SIDE_BY_SIDE_UNRECTIFIED_GRAY,
-        /// <summary>
-        /// Alias of DEPTH
-        /// </summary>
-        DEPTH_BGRA,
-        /// <summary>
-        /// Depth image. Each pixel contains 3 unsigned char (B, G, R).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C3.
-        /// </summary>
-        DEPTH_BGR,
-        /// <summary>
-        /// Grayscale depth image. Each pixel contains 1 unsigned char.
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C1.
-        /// </summary>
-        DEPTH_GRAY,
-        /// <summary>
-        /// Alias of CONFIDENCE
-        /// </summary>
-        CONFIDENCE_BGRA,
-        /// <summary>
-        /// Confidence image. Each pixel contains 3 unsigned char (B, G, R).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C3.
-        /// </summary>
-        CONFIDENCE_BGR,
-        /// <summary>
-        /// Grayscale confidence image. Each pixel contains 1 unsigned char.
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C1.
-        /// </summary>
-        CONFIDENCE_GRAY,
-        /// <summary>
-        /// Alias of NORMALS
-        /// </summary>
-        NORMALS_BGRA,
-        /// <summary>
-        /// Normals image. Each pixel contains 3 unsigned char (B, G, R).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C3.
-        /// </summary>
-        NORMALS_BGR,
-        /// <summary>
-        /// Grayscale normals image. Each pixel contains 1 unsigned char.
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C1.
-        /// </summary>
-        NORMALS_GRAY,
-        /// <summary>
-        /// Alias of DEPTH_RIGHT
-        /// </summary>
-        DEPTH_RIGHT_BGRA,
-        /// <summary>
-        /// Depth right image. Each pixel contains 3 unsigned char (B, G, R).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C3.
-        /// </summary>
-        DEPTH_RIGHT_BGR,
-        /// <summary>
-        /// Grayscale depth right image. Each pixel contains 1 unsigned char.
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C1.
-        /// </summary>
-        DEPTH_RIGHT_GRAY,
-        /// <summary>
-        /// Alias of NORMALS_RIGHT
-        /// </summary>
-        NORMALS_RIGHT_BGRA,
-        /// <summary>
-        /// Normals right image. Each pixel contains 3 unsigned char (B, G, R).
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C3.
-        /// </summary>
-        NORMALS_RIGHT_BGR,
-        /// <summary>
-        /// Grayscale normals right image. Each pixel contains 1 unsigned char.
-        ///\n Type: sl.MAT_TYPE.MAT_8U_C1.
-        /// </summary>
-        NORMALS_RIGHT_GRAY
+        NORMALS_RIGHT
     };
 
     /// <summary>
@@ -1669,11 +1486,7 @@ namespace sl
         /// <summary>
         /// Next generation of positional tracking, allows for better accuracy.
         /// </summary>
-        GEN_2,
-        /// <summary>
-        /// Fast and accurate, in both exploratory mode and mapped environments.\Note Can be used even if depth_mode is set to \ref DEPTH_MODE::NONE.
-        /// </summary>
-        GEN_3
+        GEN_2
     }
 
     ///\ingroup PositionalTracking_group
@@ -2487,24 +2300,6 @@ namespace sl
         /// </summary>
         public sl.OBJECT_DETECTION_MODEL detectionModel;
         /// <summary>
-        /// In a multi camera setup, specify which group this model belongs to.
-        /// In a multi camera setup, multiple cameras can be used to detect objects and multiple detector having similar output layout can see the same object.
-        /// Therefore, Fusion will fuse together the outputs received by multiple detectors only if they are part of the same group.
-        /// </summary>
-        [MarshalAs(UnmanagedType.LPStr)]
-        public string fusedObjectsGroupName;
-        /// <summary>
-        /// Path to the YOLO-like onnx file for custom object detection ran in the ZED SDK.
-        /// </summary>
-        [MarshalAs(UnmanagedType.LPStr)]
-        public string customOnnxFile;
-        /// <summary>
-        /// Resolution to the YOLO-like onnx file for custom object detection ran in the ZED SDK. 
-        /// This resolution defines the input tensor size for dynamic shape ONNX model only. 
-        /// The batch and channel dimensions are automatically handled, it assumes it's color images like default YOLO models.
-        /// </summary>
-        public Resolution customOnnxDynamicInputShape;
-        /// <summary>
         /// Defines a upper depth range for detections.
         /// Defined in  UNIT set at  sl.Camera.Open.
         /// Default value is set to sl.Initparameters.depthMaximumDistance (can not be higher).
@@ -3194,11 +2989,7 @@ namespace sl
         CARROT = 21,
         PERSON_HEAD = 22,
         SPORTSBALL = 23,
-        /// <summary>
-        /// sl.OBJECT_CLASS.VEHICLE
-        /// </summary>
-        MACHINERY = 24,
-        LAST = 25
+        LAST = 24
     };
 
     /// <summary>
@@ -3215,7 +3006,8 @@ namespace sl
     public enum OBJECT_ACTION_STATE
     {
         IDLE = 0, /**< The object is staying static. */
-        MOVING = 1 /**< The object is moving. */
+        MOVING = 1, /**< The object is moving. */
+        LAST = 2
     };
 
     /// <summary>
@@ -3245,7 +3037,8 @@ namespace sl
         /// <summary>
         /// For external inference, using your own custom model and/or frameworks. This mode disable the internal inference engine, the 2D bounding box detection must be provided
         /// </summary>
-        CUSTOM_BOX_OBJECTS
+        CUSTOM_BOX_OBJECTS,
+        LAST
     };
 
     /// <summary>

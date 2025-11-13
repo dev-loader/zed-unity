@@ -6,16 +6,11 @@ PluginImporter:
   iconMap: {}
   executionOrder: {}
   defineConstraints: []
-  isPreloaded: 1
+  isPreloaded: 0
   isOverridable: 0
   isExplicitlyReferenced: 0
   validateReferences: 1
   platformData:
-  - first:
-      : 
-    second:
-      enabled: 0
-      settings: {}
   - first:
       : Any
     second:
@@ -36,9 +31,9 @@ PluginImporter:
     second:
       enabled: 1
       settings:
-        CPU: x86_64
+        CPU: AnyCPU
         DefaultValueInitialized: true
-        OS: AnyOS
+        OS: Windows
   - first:
       Standalone: Linux64
     second:
@@ -50,19 +45,19 @@ PluginImporter:
     second:
       enabled: 1
       settings:
-        CPU: x86_64
+        CPU: AnyCPU
   - first:
       Standalone: Win
     second:
       enabled: 1
       settings:
-        CPU: x86
+        CPU: AnyCPU
   - first:
       Standalone: Win64
     second:
       enabled: 1
       settings:
-        CPU: x86_64
+        CPU: AnyCPU
   userData: 
   assetBundleName: 
   assetBundleVariant: 

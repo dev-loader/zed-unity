@@ -58,7 +58,7 @@ public class OpenCVPackageDetector : AssetPostprocessor
     public static void ActivateDefine()
     {
         EditorPrefs.SetBool(packageName, true);
-        string defines = PlayerSettings.GetScriptingDefineSymbols(UnityEditor.Build.NamedBuildTarget.Standalone);
+        string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
         if (defines.Length != 0)
         {
             if (!defines.Contains(defineName))
@@ -73,7 +73,7 @@ public class OpenCVPackageDetector : AssetPostprocessor
                 defines += defineName;
             }
         }
-        PlayerSettings.SetScriptingDefineSymbols(UnityEditor.Build.NamedBuildTarget.Standalone, defines);
+        PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, defines);
     }
 
     /// <summary>
@@ -84,7 +84,7 @@ public class OpenCVPackageDetector : AssetPostprocessor
     public static void DeactivateDefine(string packagename)
     {
         EditorPrefs.SetBool(packagename, false);
-        string defines = PlayerSettings.GetScriptingDefineSymbols(UnityEditor.Build.NamedBuildTarget.Standalone);
+        string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
         if (defines.Length != 0)
         {
             if (defineName != null && defines.Contains(defineName))
@@ -97,7 +97,7 @@ public class OpenCVPackageDetector : AssetPostprocessor
                 }
             }
         }
-        PlayerSettings.SetScriptingDefineSymbols(UnityEditor.Build.NamedBuildTarget.Standalone, defines);
+        PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, defines);
     }
 
 }

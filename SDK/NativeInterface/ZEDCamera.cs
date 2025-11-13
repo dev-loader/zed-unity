@@ -1,4 +1,4 @@
-//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+﻿//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
 
 using UnityEngine;
 using System.Collections.Generic;
@@ -8,57 +8,81 @@ using System.IO;
 
 namespace sl
 {
-public static class NativeWrapper
-{
-    private const string LibName = sl.ZEDCamera.nameDll;
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int CheckZEDPluginDelegate(int Major, int Minor);
-
-    private static CheckZEDPluginDelegate _checkZEDPlugin;
-
-    private static bool _initialized = false;
-
-    public static bool IsWrapperLoaded => _initialized;
-
-    // Import the function directly using DllImport
-    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
-    private static extern int sl_check_plugin(int major, int minor);
-
-    /// <summary>
-    /// Call this once to initialize the wrapper
-    /// </summary>
-    public static bool Init()
+    public static class NativeWrapper
     {
-        try
-        {
-            // Assign delegate for convenience
-            _checkZEDPlugin = sl_check_plugin;
-            _initialized = true;
-        }
-        catch (DllNotFoundException e)
-        {
-            Debug.LogError($"[NativeWrapper] Native library {LibName} not found: {e.Message}");
-        }
-        catch (EntryPointNotFoundException e)
-        {
-            Debug.LogError($"[NativeWrapper] Function sl_check_plugin not found: {e.Message}");
-        }
-        
-        return _initialized;
-    }
+        [DllImport("kernel32")]
+        private static extern IntPtr LoadLibrary(string dllToLoad);
 
-    /// <summary>
-    /// Call the plugin check function
-    /// </summary>
-    public static int CheckPlugin()
-    {
-        if (!_initialized || _checkZEDPlugin == null)
-            throw new InvalidOperationException("NativeWrapper is not initialized or function missing.");
+        [DllImport("kernel32")]
+        private static extern IntPtr GetProcAddress(IntPtr hModule, string procedureName);
 
-        return _checkZEDPlugin(ZEDCamera.PluginVersion.Major, ZEDCamera.PluginVersion.Minor);
+        [DllImport("kernel32")]
+        private static extern bool FreeLibrary(IntPtr hModule);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate int CheckZEDPluginDelegate(int Major, int Minor);
+
+        private static CheckZEDPluginDelegate _checkZEDPlugin;
+
+        public static bool IsWrapperLoaded => _checkZEDPlugin != null;
+
+        private static string packageName = "com.stereolabs.zed";
+
+        private static bool TryLoadLibrary(string lib)
+        {
+            // load dll from package library
+            IntPtr pDll = LoadLibrary(lib);
+            if (pDll == IntPtr.Zero)
+            {
+                Console.WriteLine("Failed to load DLL.");
+                return false;
+            }
+            IntPtr pAddressOfFunctionToCall = GetProcAddress(pDll, "sl_check_plugin");
+            if (pAddressOfFunctionToCall != IntPtr.Zero)
+            {
+                _checkZEDPlugin = Marshal.GetDelegateForFunctionPointer<CheckZEDPluginDelegate>(pAddressOfFunctionToCall);
+                return true;
+            }
+            return false;
+        }
+
+#if UNITY_EDITOR
+        private static string TryGetDllFromPackage(string packageName, string relativePath)
+        {
+            foreach (var package in UnityEditor.PackageManager.PackageInfo.GetAllRegisteredPackages())
+            {
+                if (package.name == packageName)
+                {
+                    string fullPath = Path.Combine(package.resolvedPath, relativePath);
+                    return fullPath;
+                }
+            }
+            return null;
+        }
+#endif
+
+        public static bool Init()
+        {
+#if UNITY_EDITOR
+            string DllPath = Path.Combine(UnityEngine.Application.dataPath, "SDK/Plugins/x86_64", sl.ZEDCamera.nameDll);
+            if (!TryLoadLibrary(DllPath))
+            {
+                DllPath = TryGetDllFromPackage(packageName, Path.Combine("SDK/Plugins/x86_64", sl.ZEDCamera.nameDll));
+            }
+            else return true;
+#else
+            string DllPath = sl.ZEDCamera.nameDll;
+#endif
+            return TryLoadLibrary(DllPath);
+        }
+
+        public static int CheckPlugin()
+        {
+            if (_checkZEDPlugin == null)
+                throw new InvalidOperationException("Function not loaded.");
+            return _checkZEDPlugin(ZEDCamera.PluginVersion.Major, ZEDCamera.PluginVersion.Minor);
+        }
     }
-}
 
     /// <summary>
     /// Main interface between Unity and the ZED SDK. Primarily consists of extern calls to the ZED SDK wrapper .dll and
@@ -338,7 +362,7 @@ public static class NativeWrapper
         /// <summary>
         /// Current Plugin Version.
         /// </summary>
-        public static readonly System.Version PluginVersion = new System.Version(5, 1, 0);
+        public static readonly System.Version PluginVersion = new System.Version(5, 0, 0);
 
         /******** DLL members ***********/
         [DllImport(nameDll, EntryPoint = "GetRenderEventFunc")]
@@ -351,8 +375,6 @@ public static class NativeWrapper
         /*
           * Utils function.
           */
-        [DllImport(nameDll, EntryPoint = "sl_free")]
-        public static extern void dllz_free(IntPtr ptr);
 
         [DllImport(nameDll, EntryPoint = "sl_unload_all_instances")]
         private static extern void dllz_unload_all_instances();
@@ -617,7 +639,7 @@ public static class NativeWrapper
         [DllImport(nameDll, EntryPoint = "sl_enable_positional_tracking_unity")]
         private static extern int dllz_enable_tracking(int cameraID, ref Quaternion quat, ref Vector3 vec, bool enableSpatialMemory = false, bool enablePoseSmoothing = false, bool enableFloorAlignment = false,
             bool trackingIsStatic = false, bool enableIMUFusion = true, float depthMinRange = -1.0f, bool setGravityAsOrigin = true, sl.POSITIONAL_TRACKING_MODE mode = sl.POSITIONAL_TRACKING_MODE.GEN_1,
-            bool enableLocalizationOnly = false, bool enable2DGroundMode = false, System.Text.StringBuilder aeraFilePath = null);
+            System.Text.StringBuilder aeraFilePath = null);
 
         [DllImport(nameDll, EntryPoint = "sl_disable_positional_tracking")]
         private static extern void dllz_disable_tracking(int cameraID, System.Text.StringBuilder path);
@@ -1540,12 +1562,11 @@ public static class NativeWrapper
         /// <param name="areaFilePath"> (optional) file of spatial memory file that has to be loaded to relocate in the scene.</param>
         /// <returns></returns>
         public sl.ERROR_CODE EnableTracking(ref Quaternion quat, ref Vector3 vec, bool enableSpatialMemory = true, bool enablePoseSmoothing = false, bool enableFloorAlignment = false, bool trackingIsStatic = false,
-            bool enableIMUFusion = true, float depthMinRange = -1.0f, bool setGravityAsOrigin = true, sl.POSITIONAL_TRACKING_MODE mode = POSITIONAL_TRACKING_MODE.GEN_1,
-            bool enableLocalizationOnly = false, bool enable2DGroundMode = false, string areaFilePath = "")
+            bool enableIMUFusion = true, float depthMinRange = -1.0f, bool setGravityAsOrigin = true, sl.POSITIONAL_TRACKING_MODE mode = POSITIONAL_TRACKING_MODE.GEN_1, string areaFilePath = "")
         {
             sl.ERROR_CODE trackingStatus = sl.ERROR_CODE.CAMERA_NOT_DETECTED;
             trackingStatus = (sl.ERROR_CODE)dllz_enable_tracking(CameraID, ref quat, ref vec, enableSpatialMemory, enablePoseSmoothing, enableFloorAlignment,
-                trackingIsStatic, enableIMUFusion, depthMinRange, setGravityAsOrigin, mode, enableLocalizationOnly, enable2DGroundMode, new System.Text.StringBuilder(areaFilePath, areaFilePath.Length));
+                trackingIsStatic, enableIMUFusion, depthMinRange, setGravityAsOrigin, mode, new System.Text.StringBuilder(areaFilePath, areaFilePath.Length));
             return trackingStatus;
         }
 
@@ -2298,8 +2319,15 @@ public static class NativeWrapper
             AssertCameraIsReady();
             //cameraSettingsManager.ResetCameraSettings(this);
 
-            foreach (sl.CAMERA_SETTINGS setting_ in Enum.GetValues(typeof(sl.CAMERA_SETTINGS)))
-                SetCameraSettings(setting_, -1);
+            SetCameraSettings(sl.CAMERA_SETTINGS.BRIGHTNESS, sl.ZEDCamera.brightnessDefault);
+            SetCameraSettings(sl.CAMERA_SETTINGS.CONTRAST, sl.ZEDCamera.contrastDefault);
+            SetCameraSettings(sl.CAMERA_SETTINGS.HUE, sl.ZEDCamera.hueDefault);
+            SetCameraSettings(sl.CAMERA_SETTINGS.SATURATION, sl.ZEDCamera.saturationDefault);
+            SetCameraSettings(sl.CAMERA_SETTINGS.SHARPNESS, sl.ZEDCamera.sharpnessDefault);
+            SetCameraSettings(sl.CAMERA_SETTINGS.GAMMA, sl.ZEDCamera.gammaDefault);
+            SetCameraSettings(sl.CAMERA_SETTINGS.AUTO_WHITEBALANCE, 1);
+            SetCameraSettings(sl.CAMERA_SETTINGS.AEC_AGC, 1);
+            SetCameraSettings(sl.CAMERA_SETTINGS.LED_STATUS, 1);
         }
 
         /// <summary>

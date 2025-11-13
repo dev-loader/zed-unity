@@ -112,11 +112,11 @@ public class BallLauncher : MonoBehaviour
             projectiles[i].SetActive(false);
             projectiles[i].hideFlags = HideFlags.HideInHierarchy;
             times[i] = 0;
-        }
+        }       
 
     }
 
-
+ 
     static float EaseIn(float t, float b, float c, float d)
     {
         return -c * (Mathf.Sqrt(1 - (t /= d) * t) - 1) + b;
@@ -125,7 +125,7 @@ public class BallLauncher : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-#if ENABLE_LEGACY_INPUT_MANAGER
+  
 		if (Input.GetKey(KeyCode.Space) || Input.GetButton("Fire1"))
         {
             if(timerball > timeballmax)
@@ -143,11 +143,7 @@ public class BallLauncher : MonoBehaviour
                 launcher.transform.localRotation = Quaternion.Euler(-offsetAngleY * Mathf.Rad2Deg, -offsetAngleX * Mathf.Rad2Deg, 0);
                 projectiles[countsphere % SPHERE_NB].GetComponent<BallTrigger>().ResetValues();
                 Rigidbody rigidBody = projectiles[countsphere % SPHERE_NB].GetComponent<Rigidbody>();
-#if UNITY_6_OR_NEWER
                 rigidBody.linearVelocity = Vector3.zero;
-#else
-                rigidBody.linearVelocity = Vector3.zero;
-#endif
                 rigidBody.isKinematic = false;
                 rigidBody.useGravity = true;
 
@@ -174,8 +170,5 @@ public class BallLauncher : MonoBehaviour
             }
         }
     }
-#else
-        Debug.LogWarning("The BallLauncher script requires the Legacy Input Manager to be enabled in Project Settings > Player > Other Settings > Active Input Handling.");
-#endif
-    }
+
 }

@@ -60,7 +60,7 @@ public class AutoCalibrationManager : MonoBehaviour
 
         if(!camAnchor)
         {
-            camAnchor = FindAnyObjectByType<CameraAnchor>();
+            camAnchor = FindObjectOfType<CameraAnchor>();
         }
 
         SetUpBalls(false);

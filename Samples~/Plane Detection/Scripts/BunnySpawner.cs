@@ -103,7 +103,7 @@ public class BunnySpawner : MonoBehaviour
     {
         if (!zedManager)
         {
-            zedManager = FindAnyObjectByType<ZEDManager>();
+            zedManager = FindObjectOfType<ZEDManager>();
         }
 
         //Find the left camera object if we didn't assign it at start. 
