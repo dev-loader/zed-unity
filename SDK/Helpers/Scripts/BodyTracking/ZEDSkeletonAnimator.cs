@@ -33,10 +33,12 @@ public class ZEDSkeletonAnimator : MonoBehaviour
     [Header("RIG SETTINGS")]
     public float ankleHeightOffset = 0.102f;
 
+#if !ENABLE_INPUT_SYSTEM
     [Header("Keyboard controls")]
     public KeyCode resetAutomaticOffset = KeyCode.R;
+#endif
 
-    #endregion
+#endregion
 
     #region vars
 
@@ -340,14 +342,16 @@ public class ZEDSkeletonAnimator : MonoBehaviour
 
     private void Update()
     {
+#if !ENABLE_INPUT_SYSTEM
         // reset automatic height offset calibration
         if (Input.GetKeyDown(resetAutomaticOffset))
         {
             heightOffsetter.CurrentheightOffset = 0;
         }
+#endif
     }
 
-    #endregion
+#endregion
 
     #region Foot IK
 
