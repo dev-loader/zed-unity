@@ -1740,9 +1740,16 @@ public class ZEDManager : MonoBehaviour
             return ZEDLayers.arlayer;
         }
     }
+
+#if UNITY_6000_3_OR_NEWER
+    /*[SerializeField]
+    [HideInInspector]
+    private int arlayer = 30;*/
+#else
     [SerializeField]
     [HideInInspector]
     //private int arlayer = 30;
+#endif
 
     /////////////////////////////////////
     //////  ZED specific events    //////

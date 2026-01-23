@@ -1,5 +1,6 @@
 ﻿//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
 
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -170,7 +171,11 @@ public class ZEDRenderingPlane : MonoBehaviour
     /// Point light structure for virtual lights on the real world.
     /// Gets sent to the shader via a compute buffer.
     /// </summary>
+#if UNITY_6000_3_OR_NEWER
+    [Serializable]
+#else
     [SerializeField]
+#endif
     public struct PointLight
     {
         /// <summary>
@@ -209,7 +214,11 @@ public class ZEDRenderingPlane : MonoBehaviour
     /// <summary>
     /// Structure of the spotlight send to the shader
     /// </summary>
+#if UNITY_6000_3_OR_NEWER
+    [Serializable]
+#else
     [SerializeField]
+#endif
     public struct SpotLight
     {
         /// <summary>
