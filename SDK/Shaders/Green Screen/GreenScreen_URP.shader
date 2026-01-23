@@ -1,5 +1,6 @@
 ﻿//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
 //Sets the transparency. Add the shadows and the lights
+
 Shader "Custom/Green Screen/Green Screen URP" {
 	Properties
 	{
@@ -7,36 +8,36 @@ Shader "Custom/Green Screen/Green Screen URP" {
 		_CameraTex("CameraTex", 2D) = "defaulttexture" {}
 	}
 
-		SubShader
+	SubShader
 	{
-	Tags{
-		"RenderPipeline"="UniversalPipeline"
-		"RenderType" = "Transparent"
-		"Queue" = "Transparent-1"
-		"LightMode" = "UniversalForward"
-	}
+		Tags{
+			"RenderPipeline"="UniversalPipeline"
+			"RenderType" = "Transparent"
+			"Queue" = "Transparent-1"
+			"LightMode" = "UniversalForward"
+		}
 
-	Pass
-	{
-		/*To use as a garbage matte*/
-		Stencil{
-		Ref 129
-		Comp[_ZEDStencilComp]
-		Pass keep
-	}
+		Pass
+		{
+			/*To use as a garbage matte*/
+			Stencil{
+			Ref 129
+			Comp[_ZEDStencilComp]
+			Pass keep
+		}
 
 		ZWrite On
 		Blend SrcAlpha OneMinusSrcAlpha
-		HLSLPROGRAM
 
+		HLSLPROGRAM
+		
+#if ZED_URP
 		#pragma multi_compile FINAL FOREGROUND BACKGROUND ALPHA KEY
 		#pragma multi_compile __ ZED_XYZ
-
 
 		#pragma prefer_hlslcc gles
 		#pragma exclude_renderers d3d11_9x
 		#pragma target 2.0
-
 
 		#pragma multi_compile _ _MAIN_LIGHT_SHADOWS
 		#pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
@@ -50,119 +51,112 @@ Shader "Custom/Green Screen/Green Screen URP" {
 		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
-
-
 		#include "../../Helpers/Shaders/ZED_Utils.cginc"
 		#define ZED_SPOT_LIGHT_DECLARATION
 		#define ZED_POINT_LIGHT_DECLARATION
 		#include "../../Helpers/Shaders/Lighting/ZED_Lighting_URP.cginc"
 
 
-				struct appdata
-			{
-				float4 vertex : POSITION;
-				float4 uv : TEXCOORD0;
-			};
+		struct appdata
+		{
+			float4 vertex : POSITION;
+			float4 uv : TEXCOORD0;
+		};
 
-			struct Attributes
-			{
-				float4 positionOS   : POSITION;
-				float3 normalOS     : NORMAL;
-				float4 tangentOS    : TANGENT;
-				float2 uv           : TEXCOORD0;
-				float2 uvLM         : TEXCOORD1;
-				UNITY_VERTEX_INPUT_INSTANCE_ID
-			};
+		struct Attributes
+		{
+			float4 positionOS   : POSITION;
+			float3 normalOS     : NORMAL;
+			float4 tangentOS    : TANGENT;
+			float2 uv           : TEXCOORD0;
+			float2 uvLM         : TEXCOORD1;
+			UNITY_VERTEX_INPUT_INSTANCE_ID
+		};
 
-			struct Varyings
-			{
-				float4 uv                       : TEXCOORD0;
-				float3 positionWS				: TEXCOORD1;
-				float4 positionCS               : SV_POSITION;
-			};
+		struct Varyings
+		{
+			float4 uv                       : TEXCOORD0;
+			float3 positionWS				: TEXCOORD1;
+			float4 positionCS               : SV_POSITION;
+		};
 
-			sampler2D _DepthXYZTex;
-			sampler2D _CameraTex;
-			float4 _DepthXYZTex_ST;
-			float4 _CameraTex_ST;
+		sampler2D _DepthXYZTex;
+		sampler2D _CameraTex;
+		float4 _DepthXYZTex_ST;
+		float4 _CameraTex_ST;
 
-			sampler2D _MaskTex;
-			uniform float4x4 _ProjectionMatrix;
-			float4 ZED_directionalLight[2];
-			int directionalLightEffect;
-			int _HasShadows;
+		sampler2D _MaskTex;
+		uniform float4x4 _ProjectionMatrix;
+		float4 ZED_directionalLight[2];
+		int directionalLightEffect;
+		int _HasShadows;
 
-			//Horizontal and vertical fields of view, assigned from ZEDRenderingPlane. 
-			//Needs to be assigned, not derived from projection matrix, because otherwise goofy things happen because of the Scene view camera. 
-			float _ZEDHFoVRad;
-			float _ZEDVFoVRad;
+		//Horizontal and vertical fields of view, assigned from ZEDRenderingPlane. 
+		//Needs to be assigned, not derived from projection matrix, because otherwise goofy things happen because of the Scene view camera. 
+		float _ZEDHFoVRad;
+		float _ZEDVFoVRad;
 
-			float _ZEDFactorAffectReal;
-			float _MaxDepth;
+		float _ZEDFactorAffectReal;
+		float _MaxDepth;
 
-			void vert(Attributes input, out Varyings output)
-			{
-				VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
-				VertexNormalInputs vertexNormalInput = GetVertexNormalInputs(input.normalOS, input.tangentOS);
+		void vert(Attributes input, out Varyings output)
+		{
+			VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
+			VertexNormalInputs vertexNormalInput = GetVertexNormalInputs(input.normalOS, input.tangentOS);
 
-				// TRANSFORM_TEX is the same as the old shader library.
-				output.uv.xy = TRANSFORM_TEX(input.uv, _CameraTex);
-				output.uv.y = 1 - output.uv.y;
+			// TRANSFORM_TEX is the same as the old shader library.
+			output.uv.xy = TRANSFORM_TEX(input.uv, _CameraTex);
+			output.uv.y = 1 - output.uv.y;
 
-				output.uv.zw = TRANSFORM_TEX(input.uv, _DepthXYZTex);
-				output.uv.w = 1 - output.uv.w;
+			output.uv.zw = TRANSFORM_TEX(input.uv, _DepthXYZTex);
+			output.uv.w = 1 - output.uv.w;
 
-				output.positionWS = vertexInput.positionWS;
-				output.positionCS = vertexInput.positionCS;
-			}
+			output.positionWS = vertexInput.positionWS;
+			output.positionCS = vertexInput.positionCS;
+		}
 
+		uint _numberColors;
+		float4 _CameraTex_TexelSize;
 
-
-			uint _numberColors;
-			float4 _CameraTex_TexelSize;
-
-			int _erosion;
-			uniform float4 _keyColor;
-			uniform float _smoothness;
-			uniform float _range;
-			uniform float _spill;
-			float _whiteClip;
-			float _blackClip;
+		int _erosion;
+		uniform float4 _keyColor;
+		uniform float _smoothness;
+		uniform float _range;
+		uniform float _spill;
+		float _whiteClip;
+		float _blackClip;
 
 
-			sampler2D _DirectionalShadowMap;
+		sampler2D _DirectionalShadowMap;
 
-			float4 _AmnbientLight;
+		float4 _AmnbientLight;
 
-			void frag(Varyings input, out half4 outColor: SV_Target, out float outDepth : SV_Depth)
-			{
-				/*outColor = half4(1, 0, 0, 1);
-				outDepth = 1;
-				return;*/
+		void frag(Varyings input, out half4 outColor: SV_Target, out float outDepth : SV_Depth)
+		{
+			/*outColor = half4(1, 0, 0, 1);
+			outDepth = 1;
+			return;*/
 
-				//Get the depth in XYZ format
-				float4 uv = input.uv;
-				float zed_z = tex2D(_DepthXYZTex, uv.zw).x;
+			//Get the depth in XYZ format
+			float4 uv = input.uv;
+			float zed_z = tex2D(_DepthXYZTex, uv.zw).x;
 
-				//Compute the depth to work with Unity (1m real = 1m to Unity)
-				float depthReal = computeDepthXYZ(zed_z);
-				//Color from the camera
-				float3 colorCamera = tex2D(_CameraTex, uv.xy).bgr;
-				float3 normals = tex2D(_NormalsTex, uv.zw).rgb;
-				float alpha = tex2D(_MaskTex, float2(uv.x, 1 - uv.y)).a;
+			//Compute the depth to work with Unity (1m real = 1m to Unity)
+			float depthReal = computeDepthXYZ(zed_z);
+			//Color from the camera
+			float3 colorCamera = tex2D(_CameraTex, uv.xy).bgr;
+			float3 normals = tex2D(_NormalsTex, uv.zw).rgb;
+			float alpha = tex2D(_MaskTex, float2(uv.x, 1 - uv.y)).a;
 
-				//fragOut o;
+			//fragOut o;
 
-				outColor.rgb = colorCamera.rgb;
-				outColor.a = 1;
+			outColor.rgb = colorCamera.rgb;
+			outColor.a = 1;
 
-				float a = alpha <= 0.0 ? 0 : 1;
-				outDepth = depthReal * a;
+			float a = alpha <= 0.0 ? 0 : 1;
+			outDepth = depthReal * a;
 
-
-
-		#ifndef FOREGROUND
-
+			#ifndef FOREGROUND
 				float4 color = tex2D(_MaskTex, float2(uv.x, 1 - uv.y)).rgba;
 				half4 c = color;
 
@@ -202,37 +196,45 @@ Shader "Custom/Green Screen/Green Screen URP" {
 				outColor.a = alpha;
 				outColor.rgb = c.rgb;
 				//outColor.rgb = half3(1, 0, 0);
-		#else
-
+			#else
 				outDepth = MAX_DEPTH;
 				outColor.a = 1;
-		#endif
+			#endif
 
-		#ifdef ALPHA
+			#ifdef ALPHA
 				outColor.r = alpha;
 				outColor.g = alpha;
 				outColor.b = alpha;
 				outColor.a = 1;
 				outDepth = MAX_DEPTH;
+			#endif
 
-		#endif
 
-
-		#ifdef BACKGROUND
+			#ifdef BACKGROUND
 				outColor.a = 0;
-		#endif
-		#ifdef KEY
+			#endif
+			#ifdef KEY
 				outDepth = MAX_DEPTH;
 				outColor.rgb = tex2D(_MaskTex, float2(uv.x, 1 - uv.y)).rgb;
 				outColor.rgb *= alpha;
 				outColor.rgb = clamp(c.rgb, float3(0.0, 0.0, 0.0), float3(1, 1, 1));
 
 				outColor.a = 1;
-		#endif
+			#endif
 				//return o;
-			
 			}
+			#else
+			CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            struct appdata { float4 vertex : POSITION; };
+            struct v2f { float4 pos : SV_POSITION; };
+            v2f vert(appdata v) { v2f o; o.pos = UnityObjectToClipPos(v.vertex); return o; }
+            fixed4 frag(v2f i) : SV_Target { return fixed4(1,0,1,1); }
+            ENDCG
+#endif
+
 			ENDHLSL
-			}
+		}
 	}
 }
