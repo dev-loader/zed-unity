@@ -738,7 +738,7 @@ public class ZEDRenderingPlane : MonoBehaviour
 
         if (mask == null || !mask.IsCreated())
         {
-            mask = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.R8);
+            mask = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB32);
         }
 
         //Set up the post-processing material.
