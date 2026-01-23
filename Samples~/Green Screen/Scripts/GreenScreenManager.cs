@@ -141,7 +141,7 @@ public class GreenScreenManager : MonoBehaviour
     /// <summary>
     /// Green screen effect material.
     /// </summary>
-    private Material greenScreenMat;
+    public Material greenScreenMat;
     /// <summary>
     /// Material used to apply preprocessing effects in OnPreRender.
     /// </summary>
