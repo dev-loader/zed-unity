@@ -1,6 +1,7 @@
 ﻿//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
 
 using UnityEngine;
+using UnityEngine.Rendering;
 
 /// <summary>
 /// Displays the point cloud of the real world in front of the camera.
@@ -24,10 +25,10 @@ public class ZEDPointCloudManager : MonoBehaviour
     /// </summary>
     public ZEDManager zedManager = null;
 
-	/// <summary>
-	/// zed Camera controller by zedManager
-	/// </summary>
-	private sl.ZEDCamera zed = null;
+    /// <summary>
+    /// zed Camera controller by zedManager
+    /// </summary>
+    private sl.ZEDCamera zed = null;
 
     /// <summary>
     /// Texture that holds the 3D position of the points.
@@ -129,7 +130,7 @@ public class ZEDPointCloudManager : MonoBehaviour
 
     void Start()
     {
-        if(zedManager == null)
+        if (zedManager == null)
         {
 #if UNITY_6000_2_OR_NEWER
             zedManager = FindFirstObjectByType<ZEDManager>();
@@ -137,7 +138,7 @@ public class ZEDPointCloudManager : MonoBehaviour
             zedManager = FindObjectOfType<ZEDManager>();
 #endif
 
-            if(ZEDManager.GetInstances().Count > 1) //We chose a ZED arbitrarily, but there are multiple cams present. Warn the user. 
+            if (ZEDManager.GetInstances().Count > 1) //We chose a ZED arbitrarily, but there are multiple cams present. Warn the user. 
             {
                 Debug.Log("Warning: " + gameObject.name + "'s zedManager was not specified, so the first available ZEDManager instance was " +
                     "assigned. However, there are multiple ZEDManager's in the scene. It's recommended to specify which ZEDManager you want to " +
@@ -145,14 +146,18 @@ public class ZEDPointCloudManager : MonoBehaviour
             }
         }
 
-		if (zedManager != null)
-			zed = zedManager.zedCamera;
+        if (zedManager != null)
+            zed = zedManager.zedCamera;
+
+#if ZED_HDRP
+        RenderPipelineManager.endCameraRendering += RenderPointCloud;
+#endif
     }
 
     // Update is called once per frame
     void Update()
     {
-		if (zed.IsCameraReady) //Don't do anything unless the ZED has been initialized. 
+        if (zed.IsCameraReady) //Don't do anything unless the ZED has been initialized. 
         {
             if (numberPoints == 0)
             {
@@ -169,55 +174,56 @@ public class ZEDPointCloudManager : MonoBehaviour
                 }
                 if (mat != null)
                 {
-                    //mat.SetTexture("_XYZTex", XYZTexture);
                     mat.SetTexture(xyzTexID, XYZTexture);
-                    //mat.SetTexture("_ColorTex", colorTexture);
                     mat.SetTexture(colorTexID, colorTexture);
-
                 }
             }
 
-        //If stop updated, create new render texture and fill them with the textures from the ZED.
-        // These textures will be displayed as they are not updated
-        if (!update && previousUpdate != update)
-        {
-            if (XYZTextureCopy == null)
+            //If stop updated, create new render texture and fill them with the textures from the ZED.
+            // These textures will be displayed as they are not updated
+            if (!update && previousUpdate != update)
             {
-                XYZTextureCopy = new RenderTexture(XYZTexture.width, XYZTexture.height, 0, RenderTextureFormat.ARGBFloat);
-            }
+                if (XYZTextureCopy == null)
+                {
+                    XYZTextureCopy = new RenderTexture(XYZTexture.width, XYZTexture.height, 0, RenderTextureFormat.ARGBFloat);
+                }
 
-            if (ColorTextureCopy == null)
+                if (ColorTextureCopy == null)
+                {
+                    ColorTextureCopy = new RenderTexture(colorTexture.width, colorTexture.height, 0, RenderTextureFormat.ARGB32);
+                }
+
+                //Copy the new textures into the buffers. 
+                Graphics.Blit(XYZTexture, XYZTextureCopy);
+                Graphics.Blit(colorTexture, ColorTextureCopy);
+
+                if (mat != null)
+                {
+                    mat.SetTexture(xyzTexID, XYZTextureCopy);
+                    mat.SetTexture(colorTexID, ColorTextureCopy);
+                }
+            }
+            //Send the textures to the material/shader. 
+            if (update && previousUpdate != update && mat != null)
             {
-                ColorTextureCopy = new RenderTexture(colorTexture.width, colorTexture.height, 0, RenderTextureFormat.ARGB32);
+                mat.SetTexture(xyzTexID, XYZTexture);
+                mat.SetTexture(colorTexID, colorTexture);
             }
-
-            //Copy the new textures into the buffers. 
-            Graphics.Blit(XYZTexture, XYZTextureCopy);
-            Graphics.Blit(colorTexture, ColorTextureCopy);
-
-            if (mat != null)
-            {
-                //mat.SetTexture("_XYZTex", XYZTextureCopy);
-                mat.SetTexture(xyzTexID, XYZTextureCopy);
-                //mat.SetTexture("_ColorTex", ColorTextureCopy);
-                mat.SetTexture(colorTexID, ColorTextureCopy);
-            }
+            previousUpdate = update;
         }
-        //Send the textures to the material/shader. 
-        if (update && previousUpdate != update && mat != null)
-        {
-            //mat.SetTexture("_XYZTex", XYZTexture);
-            mat.SetTexture(xyzTexID, XYZTexture);
-            //mat.SetTexture("_ColorTex", colorTexture);
-            mat.SetTexture(colorTexID, colorTexture);
-
-
-        }
-        previousUpdate = update;
-        }
-
     }
 
+#if ZED_HDRP
+    void RenderPointCloud(ScriptableRenderContext context, Camera camera)
+    {
+        if (camera == hiddenObjectFromCamera || !display || mat == null || numberPoints == 0)
+            return;
+
+        mat.SetMatrix(positionID, transform.localToWorldMatrix);
+        mat.SetPass(0);
+        Graphics.DrawProceduralNow(MeshTopology.Points, 1, numberPoints);
+    }
+#endif
 
     void OnApplicationQuit()
     {
@@ -232,8 +238,20 @@ public class ZEDPointCloudManager : MonoBehaviour
         {
             ColorTextureCopy.Release();
         }
+
+#if ZED_HDRP
+        RenderPipelineManager.endCameraRendering -= RenderPointCloud;
+#endif
     }
 
+    void OnDestroy()
+    {
+#if ZED_HDRP
+        RenderPipelineManager.endCameraRendering -= RenderPointCloud;
+#endif
+    }
+
+#if !ZED_HDRP
     void OnRenderObject()
     {
         if (mat != null)
@@ -242,12 +260,11 @@ public class ZEDPointCloudManager : MonoBehaviour
             
             if (!display) return; //Don't draw anything if the user doesn't want to. 
 
-            //mat.SetMatrix("_Position", transform.localToWorldMatrix);
             mat.SetMatrix(positionID, transform.localToWorldMatrix);
             mat.SetPass(0);
 
             Graphics.DrawProceduralNow(MeshTopology.Points, 1, numberPoints);
         }
     }
-
+#endif
 }
