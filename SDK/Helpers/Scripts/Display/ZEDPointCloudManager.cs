@@ -267,4 +267,8 @@ public class ZEDPointCloudManager : MonoBehaviour
         }
     }
 #endif
+
+    public bool Display { get => display; set => display = value; }
+
+    public bool ToggleDisplay() => display = !display;
 }
