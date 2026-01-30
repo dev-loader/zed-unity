@@ -139,7 +139,9 @@ public class ZEDBodyTrackingManager : MonoBehaviour
 
     //private float alpha = 0.1f;
 
-#endregion
+    #endregion
+
+    static List<DetectedBody> _newBodies = new List<DetectedBody>();
 
     private void Awake()
     {
@@ -233,9 +235,11 @@ public class ZEDBodyTrackingManager : MonoBehaviour
     private void UpdateSkeletonData(BodyTrackingFrame dframe)
     {
 		List<int> remainingKeyList = new List<int>(avatarControlList.Keys);
-		List<DetectedBody> newbodies = dframe.GetFilteredObjectList(showON, showSEARCHING, showOFF);
 
- 		foreach (DetectedBody dbody in newbodies)
+        _newBodies = new List<DetectedBody>();
+		_newBodies = dframe.GetFilteredObjectList(showON, showSEARCHING, showOFF);
+
+         foreach (DetectedBody dbody in _newBodies)
         {
 			int person_id = dbody.rawBodyData.id;
 
@@ -368,4 +372,6 @@ public class ZEDBodyTrackingManager : MonoBehaviour
             handler.rootVelocity = data.velocity;
         }
     }
+
+    public static List<DetectedBody> newBodies => _newBodies;
 }
